@@ -8,15 +8,19 @@ import subprocess
 #list of DBs generated from script, these will be deleted at the end 
 list_of_oracle_dbs = "list_of_oracle_dbs.txt"
 list_of_aurora_dbs = "list_of_aurora_dbs.txt"
+
+list_of_oracle_dbs_address = "list_of_oracle_dbs_addresses.txt"
+list_of_aurora_dbs_address = "list_of_aurora_dbs_addresses.txt"
+
+list_of_oracle_dbs_username = "list_of_oracle_dbs_username.txt"
+list_of_aurora_dbs_username = "list_of_aurora_dbs_username.txt"
+
 #intemediate file, this will be deleted at the end 
 new_db_list = "new_db_list.txt"
 #name of terraform variable file 
 filePath = "variables.tf"
 #shell script to retrieve DBs from AWS
 aws_shell_script = "make_db_list.sh"
-
-
-os.system(("./"+aws_shell_script))
 
 def terra_var_db_list(list_of_dbs):
     #reads in list_of_dbs.txt into list
@@ -46,10 +50,16 @@ def terra_var_db_count(list_of_dbs):
     number_of_dbs = len(open(list_of_dbs).readlines(  ))
     return (number_of_dbs)
 
-terra_oracle_list_dbs = terra_var_db_list(list_of_oracle_dbs)
+os.system(("./"+aws_shell_script))
 terra_oracle_count_dbs = terra_var_db_count(list_of_oracle_dbs)
-terra_aurora_list_dbs = terra_var_db_list(list_of_aurora_dbs)
+terra_oracle_list_dbs = terra_var_db_list(list_of_oracle_dbs)
+terra_oracle_list_dbs_address = terra_var_db_list(list_of_oracle_dbs_address)
+terra_oracle_list_dbs_username = terra_var_db_list(list_of_oracle_dbs_username)
+
 terra_aurora_count_dbs = terra_var_db_count(list_of_aurora_dbs)
+terra_aurora_list_dbs = terra_var_db_list(list_of_aurora_dbs)
+terra_aurora_list_dbs_address = terra_var_db_list(list_of_aurora_dbs_address)
+terra_aurora_list_dbs_username = terra_var_db_list(list_of_aurora_dbs_username)
 
 # Removes old variables.tf and creates a new one
 if os.path.exists(filePath):
@@ -81,9 +91,32 @@ final_string_db_count_aurora = header_count_aurora + str(terra_aurora_count_dbs)
 
 final_string_db_count = final_string_db_count_oracle + final_string_db_count_aurora
 
-f.write((final_string_db_list + final_string_db_count))
+# DB address strings for the variables.tf file
+header_list_oracle_address = "\nvariable \"oracle_db_address\" {\n\tdefault = ["
+header_list_aurora_address = "\nvariable \"aurora_db_address\" {\n\tdefault = ["
+
+final_string_db_list_oracle_address = header_list_oracle_address + terra_oracle_list_dbs_address + footer_list
+final_string_db_list_aurora_address = header_list_aurora_address + terra_aurora_list_dbs_address + footer_list
+final_string_db_address = final_string_db_list_oracle_address + final_string_db_list_aurora_address
+
+# DB username strings for the variables.tf file
+header_list_oracle_username = "\nvariable \"oracle_db_username\" {\n\tdefault = ["
+header_list_aurora_username = "\nvariable \"aurora_db_username\" {\n\tdefault = ["
+
+final_string_db_list_oracle_username = header_list_oracle_username + terra_oracle_list_dbs_username + footer_list
+final_string_db_list_aurora_username = header_list_aurora_username + terra_aurora_list_dbs_username + footer_list
+final_string_db_username = final_string_db_list_oracle_username + final_string_db_list_aurora_username
+
+
+f.write((final_string_db_list + final_string_db_count + final_string_db_address + final_string_db_username ))
 f.close()
 
 os.remove(list_of_oracle_dbs)
+os.remove(list_of_oracle_dbs_address)
+os.remove(list_of_oracle_dbs_username)
+
 os.remove(list_of_aurora_dbs)
+os.remove(list_of_aurora_dbs_address)
+os.remove(list_of_aurora_dbs_username)
+
 os.remove(new_db_list)
